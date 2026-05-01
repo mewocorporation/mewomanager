@@ -9,43 +9,6 @@ from json import dump as jsondump
 
 pygame.init()
 
-
-######## variables
-# display       = pygame.display.set_mode((1863,1048))
-# display       = pygame.display.set_mode((1280,100))
-display       = pygame.display.set_mode((1280,720))
-displaysize   = pygame.display.get_window_size()
-bgcolor       = pygame.Color(255,100,100)
-txtbgcolor    = pygame.Color(255,127,128)
-homeDir       = str(Path.home())
-font          = pygame.font.Font(homeDir+"/jetbrainsmononerd.ttf", 24)
-passwordinput = pygameti.TextInputVisualizer(font_color='White', font_object=font)
-passwordtext  = font.render("password: "+passwordinput.value, True, 'White')
-unlocked      = False
-passwords     = { "yoink": 2 }
-unlockPassword= "mewo"
-viewPasswords = [ False ]
-seePasswordstr= [ "<o>" ]
-canClick      = True
-addingPassword= False
-areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = True
-addPasswordInput = pygameti.TextInputVisualizer(font_color='White', font_object=font)
-
-"""special character:
-•••••••••. this is a place
-that you can copy the character"""
-
-# getPasswords() = set passwords to dictionary of the json file
-def getPasswords():
-    with open(homeDir+"/.pwsForMewoManager.json") as file:
-        return jsonload(file)
-
-def setPasswords():
-    with open(homeDir+"/.pwsForMewoManager.json", "w") as file:
-        jsondump(passwords, file)
-        
-
-
 # chatgpt code for building on windows cuz i use linux
 import sys
 from os import path as ospath
@@ -53,8 +16,59 @@ from os import path as ospath
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return ospath.join(sys._MEIPASS, relative_path)
-    return ospath.join(os.path.abspath("."), relative_path)
+    return ospath.join(ospath.abspath("."), relative_path)
 
+######## variables
+# display         = pygame.display.set_mode((1863,1048))
+# display         = pygame.display.set_mode((1280,100))
+display         = pygame.display.set_mode((1280,720))
+displaysize     = pygame.display.get_window_size()
+bgcolor         = pygame.Color(255,100,100)
+txtbgcolor      = pygame.Color(255,127,128)
+homeDir         = str(Path.home())
+# font            = pygame.font.Font(homeDir+"/jetbrainsmononerd.ttf", 24)
+# chatgpt font for windows
+font   = pygame.font.Font(resource_path("jetbrainsmononerd.ttf"), 24)
+passwordinput   = pygameti.TextInputVisualizer(font_color='White', font_object=font)
+passwordtext    = font.render("password: "+passwordinput.value, True, 'White')
+unlocked        = False
+passwords       = { "yoink": 2 }
+unlockPassword  = "mewo"
+viewPasswords   = [ False ]
+seePasswordstr  = [ "<o>" ]
+canClick        = True
+addingPassword  = False
+areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = True
+addPasswordInput= pygameti.TextInputVisualizer(font_color='White', font_object=font)
+platformAdding  = ""
+passwordsAdding =""
+
+"""special character:
+•••••••••. this is a place
+that you can copy the character"""
+
+# getPasswords() = set passwords to dictionary of the json file
+"""def getPasswords():
+    with open(homeDir+"/.pwsForMewoManager.json") as file:
+        return jsonload(file)
+original getpasswords function"""
+
+# chatgpt getpasswords for if .pwsForMewoManager doesnt exist
+def getPasswords():
+    path = homeDir + "/.pwsForMewoManager.json"
+    try:
+        with open(path) as file:
+            return jsonload(file)
+    except FileNotFoundError:
+        # create file with empty dict
+        with open(path, "w") as file:
+            jsondump({}, file)
+        return {}
+
+def setPasswords():
+    with open(homeDir+"/.pwsForMewoManager.json", "w") as file:
+        jsondump(passwords, file)
+        
 # display = pygame.display.set_mode((720,len(list(getPasswords().keys()))*40 + 100))
 
 while True:
@@ -78,8 +92,8 @@ while True:
             print("\n\nBYE")
             exit()
     
-    # handle the correct password being inputted
-    if keys[pygame.K_RETURN] and passwordinput.value == unlockPassword:
+    # handle the correct password being inputted when not unlocked
+    if keys[pygame.K_RETURN] and passwordinput.value == unlockPassword and not unlocked:
         unlocked = True
         passwords = getPasswords()
 
@@ -101,7 +115,7 @@ while True:
                 platform = f"{platform[0]}{platform[1]}{platform[2]}•••• "
             
             # what am i supposed to call this variable????
-            eee = 80
+            eee = 150
             # blit custom text
             display.blit(font.render(f"{platform}: {password}", True, 'White'), (100, (onko * 40) + eee))
             # button bg
@@ -115,7 +129,7 @@ while True:
             # add 1 to onko, and let u clik again
             onko += 1
             #print(viewPasswords, end="    \r")
-            if not pygame.mouse.get_pressed()[0]:
+            if not pygame.mouse.get_pressed()[0] and not keys[pygame.K_RETURN]:
                 canClick = True
 
         print(passwords)
@@ -130,7 +144,26 @@ while True:
             areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = True
             setPasswords()
         if addingPassword == True:
-            display.blit(addPasswordInput.surface())
+            addPasswordInput.update(events=events)
+            display.blit(addPasswordInput.surface, (180, 80))
+            if areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword == True:
+                display.blit(font.render("platform: ", True, 'White'), (30,80))
+                if keys[pygame.K_RETURN] and canClick:
+                    areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = False
+                    platformAdding = addPasswordInput.value
+                    canClick = False
+                    addPasswordInput.value = ""
+            else:
+                display.blit(font.render("password: ", True, 'White'), (30,80))
+                if keys[pygame.K_RETURN] and canClick:
+                    addingPassword = False
+                    canClick = False
+                    passwordsAdding = addPasswordInput.value
+                    passwords |= { platformAdding: passwordsAdding }
+                    setPasswords()
+                    passwordsAdding = ""
+                    platformAdding =  ""
+        print(passwordsAdding+": password. "+platformAdding+": platform")
     else:
         display.blit(passwordtext, (30,30))
         display.blit(passwordinput.surface, (160,30))
