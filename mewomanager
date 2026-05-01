@@ -29,7 +29,7 @@ homeDir         = str(Path.home())
 # font            = pygame.font.Font(homeDir+"/jetbrainsmononerd.ttf", 24)
 # chatgpt font for windows
 font   = pygame.font.Font(resource_path("jetbrainsmononerd.ttf"), 24)
-passwordinput   = pygameti.TextInputVisualizer(font_color='White', font_object=font)
+passwordinput   = pygameti.TextInputVisualizer(font_color='White', font_object=font, cursor_color='White')
 passwordtext    = font.render("password: "+passwordinput.value, True, 'White')
 unlocked        = False
 passwords       = { "yoink": 2 }
@@ -39,7 +39,7 @@ seePasswordstr  = [ "<o>" ]
 canClick        = True
 addingPassword  = False
 areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = True
-addPasswordInput= pygameti.TextInputVisualizer(font_color='White', font_object=font)
+addPasswordInput= pygameti.TextInputVisualizer(font_color='White', font_object=font, cursor_color='White')
 platformAdding  = ""
 passwordsAdding =""
 
@@ -65,9 +65,9 @@ def getPasswords():
             jsondump({}, file)
         return {}
 
-def setPasswords():
+def setPasswords(arrayer):
     with open(homeDir+"/.pwsForMewoManager.json", "w") as file:
-        jsondump(passwords, file)
+        jsondump(arrayer, file)
         
 # display = pygame.display.set_mode((720,len(list(getPasswords().keys()))*40 + 100))
 
@@ -99,50 +99,65 @@ while True:
 
     # all the code for handling blitting the correct text and stuff
     if unlocked:
+        if getPasswords() != passwords:
+            passwords = getPasswords()
         for platform, password in passwords.items():
             # handle viewPasswords and seePasswordstr having less items than passwords in .pwsForMewoManager
             if onko > len(viewPasswords) - 1:
                 viewPasswords.append(False)
             if onko > len(seePasswordstr) - 1:
-                seePasswordstr.append("<v>")
+                seePasswordstr.append("<o>")
                 
             # set the string var with <•> if viewPasswords is true, else <o>
             if viewPasswords[onko] == True:
                 seePasswordstr[onko] = "<•>"
+                # delete password button
+                deleteButton = pygame.draw.rect(display, txtbgcolor, [(20,(onko *40) +eee+3), (30,25)])
+                display.blit(font.render("Ø", True, 'White'), (30, (onko * 40) + eee))
+                if pygame.mouse.get_pressed()[0] and deleteButton.collidepoint(pygame.mouse.get_pos()) and canClick:
+                    canClick = False
+                    tempPass = dict(passwords)
+                    tempViewPasswords = list(viewPasswords)
+                    del tempPass[platform]
+                    setPasswords(tempPass)
             else:
                 seePasswordstr[onko] = "<o>"
                 password = "•••••"
-                platform = f"{platform[0]}{platform[1]}{platform[2]}•••• "
+                platform = f"{platform[0]}{platform[1]}••••"#{platform[2]}•••• "
             
             # what am i supposed to call this variable????
             eee = 150
             # blit custom text
-            display.blit(font.render(f"{platform}: {password}", True, 'White'), (100, (onko * 40) + eee))
+            display.blit(font.render(f"{platform}: {password}", True, 'White'), (150, (onko * 40) + eee))
             # button bg
-            viewButton = pygame.draw.rect(display, txtbgcolor, [(20,(onko *40) +eee+3), (60,25)])
+            viewButton = pygame.draw.rect(display, txtbgcolor, [(70,(onko *40) +eee+3), (60,25)])
             # button
-            display.blit(font.render(seePasswordstr[onko], True, 'White'), (30, (onko * 40) + eee))
+            display.blit(font.render(seePasswordstr[onko], True, 'White'), (80, (onko * 40) + eee))
             # handle clicking button
             if pygame.mouse.get_pressed()[0] and viewButton.collidepoint(pygame.mouse.get_pos()) and canClick:
-                viewPasswords[onko] = not viewPasswords[onko]
                 canClick = False
+                viewPasswords[onko] = not viewPasswords[onko]
+
             # add 1 to onko, and let u clik again
             onko += 1
             #print(viewPasswords, end="    \r")
             if not pygame.mouse.get_pressed()[0] and not keys[pygame.K_RETURN]:
                 canClick = True
 
-        print(passwords)
+        #print(passwords)
         # button bg
         addPasswordButton = pygame.draw.rect(display, txtbgcolor, [(20, 30), (190,30)])
-        # button
+        # button to add a passsword
         display.blit(font.render("add password", True, 'White'), (30, 30))
+
+        # handle adding passwords???? try to understand it urself i
+        # wont write a very long comment or a lot of 1line comments.
         if pygame.mouse.get_pressed()[0] and addPasswordButton.collidepoint(pygame.mouse.get_pos()) and canClick:
             canClick = False
             addingPassword = True
         if areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword == False and addingPassword == False:
             areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = True
-            setPasswords()
+            setPasswords(passwords)
         if addingPassword == True:
             addPasswordInput.update(events=events)
             display.blit(addPasswordInput.surface, (180, 80))
@@ -158,12 +173,16 @@ while True:
                 if keys[pygame.K_RETURN] and canClick:
                     addingPassword = False
                     canClick = False
+                    areWeAddingThePlatformOrThePasswordQuestionMarkTrueIsPlatformFalseIsPassword = True
                     passwordsAdding = addPasswordInput.value
                     passwords |= { platformAdding: passwordsAdding }
-                    setPasswords()
+                    setPasswords(passwords)
                     passwordsAdding = ""
                     platformAdding =  ""
-        print(passwordsAdding+": password. "+platformAdding+": platform")
+                    addPasswordInput.value = ""
+        if not pygame.mouse.get_pressed()[0] and not keys[pygame.K_RETURN]:
+            canClick = True
+            
     else:
         display.blit(passwordtext, (30,30))
         display.blit(passwordinput.surface, (160,30))
