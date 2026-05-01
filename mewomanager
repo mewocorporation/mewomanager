@@ -43,6 +43,17 @@ def getPasswords():
 def setPasswords():
     with open(homeDir+"/.pwsForMewoManager.json", "w") as file:
         jsondump(passwords, file)
+        
+
+
+# chatgpt code for building on windows cuz i use linux
+import sys
+from os import path as ospath
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return ospath.join(sys._MEIPASS, relative_path)
+    return ospath.join(os.path.abspath("."), relative_path)
 
 # display = pygame.display.set_mode((720,len(list(getPasswords().keys()))*40 + 100))
 
